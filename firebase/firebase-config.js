@@ -17,18 +17,22 @@ const firebaseConfig = {
 // Handle potential initialization errors
 let app, analytics, db, storage, auth;
 
-try {
-    // Import Firebase modules dynamically to handle potential loading issues
-    Promise.all([
-        import('https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js'),
-        import('https://www.gstatic.com/firebasejs/9.6.10/firebase-analytics.js'),
-        import('https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js'),
-        import('https://www.gstatic.com/firebasejs/9.6.10/firebase-storage.js'),
-        import('https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js')
-    ]).then(([appModule, analyticsModule, firestoreModule, storageModule, authModule]) => {
+// Import Firebase modules and initialize services
+import('https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js')
+    .then((appModule) => {
         // Initialize Firebase app
         app = appModule.initializeApp(firebaseConfig);
+        console.log('Firebase app initialized');
         
+        // Import and initialize other services
+        return Promise.all([
+            import('https://www.gstatic.com/firebasejs/9.6.10/firebase-analytics.js'),
+            import('https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js'),
+            import('https://www.gstatic.com/firebasejs/9.6.10/firebase-storage.js'),
+            import('https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js')
+        ]);
+    })
+    .then(([analyticsModule, firestoreModule, storageModule, authModule]) => {
         // Initialize Firebase services
         analytics = analyticsModule.getAnalytics(app);
         db = firestoreModule.getFirestore(app);
@@ -41,15 +45,15 @@ try {
         window.auth = auth;
         window.firebase = { app, analytics };
         
-        console.log('Firebase initialized successfully');
-    }).catch(error => {
+        console.log('Firebase services initialized successfully');
+        
+        // Dispatch a custom event to notify that Firebase is ready
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+    })
+    .catch((error) => {
         console.error('Error initializing Firebase:', error);
         showFirebaseError('Failed to initialize Firebase services. Please check your internet connection and try again.');
     });
-} catch (error) {
-    console.error('Error importing Firebase modules:', error);
-    showFirebaseError('Failed to load Firebase modules. Please check your internet connection and try again.');
-}
 
 // Show error notification function
 function showFirebaseError(message) {
