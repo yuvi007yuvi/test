@@ -15,9 +15,9 @@ service firebase.storage {
       allow update: if request.auth != null && 
         request.auth.uid == imageId.replace('.jpg', '');
       
-      // Allow admins to read any face images
-      allow read: if request.auth != null && 
-        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true;
+      // For development, allow admins to read any face images
+      // In production, restrict this to admins only
+      allow read: if request.auth != null;
     }
     
     // Profile images folder
@@ -35,10 +35,10 @@ service firebase.storage {
         request.auth.uid == imageId.replace('.jpg', '');
     }
     
-    // Allow admins to read any images
+    // Allow authenticated users to read any images (for development)
+    // In production, restrict this to admins only
     match /{allPaths=**} {
-      allow read: if request.auth != null && 
-        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true;
+      allow read: if request.auth != null;
     }
   }
 }

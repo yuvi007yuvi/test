@@ -330,31 +330,38 @@ class RegistrationManager {
         }
 
         try {
-            // Use the globally available Firebase services instead of dynamic imports
-            // These are exported from firebase-config.js
+            // Check if Firebase is ready
             if (!window.db || !window.storage) {
-                throw new Error('Firebase services not initialized');
+                // Wait for Firebase to be ready
+                await new Promise((resolve) => {
+                    const checkFirebase = () => {
+                        if (window.db && window.storage) {
+                            resolve();
+                        } else {
+                            setTimeout(checkFirebase, 100);
+                        }
+                    };
+                    checkFirebase();
+                });
             }
 
-            // Save user data to Firestore using the global db instance
-            const userRef = await window.db.collection('users').add(userData);
+            // Import Firebase functions dynamically
+            const { collection, addDoc, updateDoc } = await import('https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js');
+            const { ref, uploadBytes, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/9.6.10/firebase-storage.js');
             
-            // Upload face image to Firebase Storage using the global storage instance
+            // Save user data to Firestore
+            const usersCollection = collection(window.db, 'users');
+            const userRef = await addDoc(usersCollection, userData);
+            
+            // Upload face image to Firebase Storage
             if (this.faceImage) {
                 const faceImageBlob = this.dataURLToBlob(this.faceImage);
-                
-                // Create a reference to the file location in Storage
-                const storageRef = window.storage.ref();
-                const faceImageRef = storageRef.child(`face_images/${userRef.id}.jpg`);
-                
-                // Upload the file
-                await faceImageRef.put(faceImageBlob);
-                
-                // Get the download URL
-                const imageUrl = await faceImageRef.getDownloadURL();
+                const storageRef = ref(window.storage, `face_images/${userRef.id}.jpg`);
+                await uploadBytes(storageRef, faceImageBlob);
+                const imageUrl = await getDownloadURL(storageRef);
                 
                 // Update user document with image URL
-                await userRef.update({ faceImageUrl: imageUrl });
+                await updateDoc(userRef, { faceImageUrl: imageUrl });
             }
 
             this.showNotification('User registered successfully!', 'success');
