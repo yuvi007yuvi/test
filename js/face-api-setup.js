@@ -1,0 +1,161 @@
+// Face API setup and utilities
+
+class FaceAPIManager {
+    constructor() {
+        this.isLoaded = false;
+        this.isLoading = false;
+        this.modelsPath = './lib/models/';
+        this.faceDetectionOptions = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 });
+        this.faceRecognitionOptions = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 });
+    }
+
+    // Initialize face-api.js models
+    async loadModels() {
+        if (this.isLoaded) return true;
+        if (this.isLoading) return false;
+
+        this.isLoading = true;
+        console.log('Loading face-api.js models...');
+
+        try {
+            await Promise.all([
+                faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelsPath),
+                faceapi.nets.faceLandmark68Net.loadFromUri(this.modelsPath),
+                faceapi.nets.faceRecognitionNet.loadFromUri(this.modelsPath),
+                faceapi.nets.faceExpressionNet.loadFromUri(this.modelsPath)
+            ]);
+
+            this.isLoaded = true;
+            this.isLoading = false;
+            console.log('Face-api.js models loaded successfully');
+            return true;
+        } catch (error) {
+            console.error('Error loading face-api.js models:', error);
+            this.isLoading = false;
+            return false;
+        }
+    }
+
+    // Detect faces in an image/video element
+    async detectFaces(imageElement) {
+        if (!this.isLoaded) {
+            console.warn('Face API models not loaded yet');
+            return [];
+        }
+
+        try {
+            const detections = await faceapi
+                .detectAllFaces(imageElement, this.faceDetectionOptions)
+                .withFaceLandmarks()
+                .withFaceDescriptors()
+                .withFaceExpressions();
+
+            return detections;
+        } catch (error) {
+            console.error('Error detecting faces:', error);
+            return [];
+        }
+    }
+
+    // Extract face descriptor for recognition
+    async extractFaceDescriptor(imageElement) {
+        const detections = await this.detectFaces(imageElement);
+        
+        if (detections.length === 0) {
+            throw new Error('No face detected in the image');
+        }
+
+        if (detections.length > 1) {
+            throw new Error('Multiple faces detected. Please ensure only one face is visible.');
+        }
+
+        return detections[0].descriptor;
+    }
+
+    // Compare two face descriptors
+    compareFaces(descriptor1, descriptor2, threshold = 0.6) {
+        const distance = faceapi.euclideanDistance(descriptor1, descriptor2);
+        return {
+            distance: distance,
+            isMatch: distance < threshold,
+            confidence: Math.max(0, 1 - distance)
+        };
+    }
+
+    // Draw face detection boxes on canvas
+    drawFaceBoxes(canvas, detections, options = {}) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        detections.forEach(detection => {
+            const { x, y, width, height } = detection.detection.box;
+            const { expressions } = detection;
+
+            // Draw bounding box
+            ctx.strokeStyle = options.color || '#10b981';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, width, height);
+
+            // Draw confidence score
+            if (options.showConfidence !== false) {
+                ctx.fillStyle = options.color || '#10b981';
+                ctx.font = '12px Arial';
+                ctx.fillText(
+                    `${Math.round(detection.detection.score * 100)}%`,
+                    x, y - 5
+                );
+            }
+
+            // Draw expressions
+            if (options.showExpressions && expressions) {
+                const dominantExpression = Object.keys(expressions).reduce((a, b) => 
+                    expressions[a] > expressions[b] ? a : b
+                );
+                ctx.fillText(
+                    dominantExpression,
+                    x, y + height + 15
+                );
+            }
+        });
+    }
+
+    // Get face detection status
+    getStatus() {
+        return {
+            isLoaded: this.isLoaded,
+            isLoading: this.isLoading
+        };
+    }
+
+    // Reset face detection
+    reset() {
+        this.isLoaded = false;
+        this.isLoading = false;
+    }
+}
+
+// Initialize face API manager
+window.faceAPIManager = new FaceAPIManager();
+
+// Utility function to show face detection status
+function updateFaceAPIStatus() {
+    const status = window.faceAPIManager.getStatus();
+    const statusElement = document.getElementById('faceApiStatusText');
+    const indicatorElement = document.getElementById('faceApiStatus');
+    
+    if (statusElement && indicatorElement) {
+        if (status.isLoading) {
+            statusElement.textContent = 'Loading...';
+            indicatorElement.className = 'w-3 h-3 bg-yellow-500 rounded-full mr-2';
+        } else if (status.isLoaded) {
+            statusElement.textContent = 'Ready';
+            indicatorElement.className = 'w-3 h-3 bg-green-500 rounded-full mr-2';
+        } else {
+            statusElement.textContent = 'Not Loaded';
+            indicatorElement.className = 'w-3 h-3 bg-red-500 rounded-full mr-2';
+        }
+    }
+}
+
+// Auto-update status every second
+setInterval(updateFaceAPIStatus, 1000);

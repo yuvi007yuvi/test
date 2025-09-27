@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Attendance System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen font-inter">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="nav-container flex justify-between items-center h-16 sm:h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl sm:text-2xl font-bold text-indigo-600">Face Attendance</h1>
+                    </div>
+                </div>
+                <div class="nav-links flex items-center space-x-2 sm:space-x-4">
+                    <a href="registration.html" class="bg-indigo-600 text-white px-3 py-2 sm:px-4 rounded-lg hover:bg-indigo-700 transition-colors text-sm sm:text-base">
+                        <i class="material-icons mr-1 sm:mr-2 text-sm sm:text-base">person_add</i>
+                        <span class="hidden sm:inline">Register</span>
+                    </a>
+                    <a href="attendance.html" class="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base">
+                        <i class="material-icons mr-1 sm:mr-2 text-sm sm:text-base">camera_alt</i>
+                        <span class="hidden sm:inline">Mark Attendance</span>
+                    </a>
+                    <a href="admin-dashboard.html" class="bg-gray-600 text-white px-3 py-2 sm:px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base">
+                        <i class="material-icons mr-1 sm:mr-2 text-sm sm:text-base">admin_panel_settings</i>
+                        <span class="hidden sm:inline">Admin</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div class="text-center">
+            <h1 class="hero-title text-3xl sm:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
+                Welcome to Face Attendance System
+            </h1>
+            <p class="hero-subtitle text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 max-w-3xl mx-auto">
+                A modern, secure, and efficient attendance management system powered by facial recognition technology.
+            </p>
+            
+            <!-- Feature Cards -->
+            <div class="feature-grid grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mt-8 sm:mt-12">
+                <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+                    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <i class="material-icons text-indigo-600 text-2xl sm:text-3xl">person_add</i>
+                    </div>
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Easy Registration</h3>
+                    <p class="text-sm sm:text-base text-gray-600">Register users with facial recognition for secure and quick identification.</p>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+                    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <i class="material-icons text-green-600 text-2xl sm:text-3xl">camera_alt</i>
+                    </div>
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Quick Attendance</h3>
+                    <p class="text-sm sm:text-base text-gray-600">Mark attendance instantly with real-time face detection and matching.</p>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+                    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <i class="material-icons text-purple-600 text-2xl sm:text-3xl">analytics</i>
+                    </div>
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Analytics & Reports</h3>
+                    <p class="text-sm sm:text-base text-gray-600">Comprehensive dashboard with attendance reports and analytics.</p>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons mt-8 sm:mt-12 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                <a href="registration.html" class="bg-indigo-600 text-white px-6 py-3 sm:px-8 rounded-lg hover:bg-indigo-700 transition-colors text-base sm:text-lg font-medium">
+                    <i class="material-icons mr-2">person_add</i>Get Started
+                </a>
+                <a href="attendance.html" class="bg-green-600 text-white px-6 py-3 sm:px-8 rounded-lg hover:bg-green-700 transition-colors text-base sm:text-lg font-medium">
+                    <i class="material-icons mr-2">camera_alt</i>Mark Attendance
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2024 Face Attendance System. Built with modern web technologies.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module" src="firebase/firebase-config.js"></script>
+    <script src="js/mobile-enhancements.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

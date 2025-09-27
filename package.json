@@ -1,0 +1,44 @@
+{
+  "name": "face-attendance-system",
+  "version": "1.0.0",
+  "description": "A modern face recognition attendance system built with HTML, JavaScript, Firebase, and face-api.js",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -p 8000",
+    "dev": "npx live-server --port=8000 --open=index.html",
+    "setup": "node setup.js",
+    "build": "echo 'No build process required for this static project'",
+    "test": "echo 'No tests specified'"
+  },
+  "keywords": [
+    "face-recognition",
+    "attendance",
+    "firebase",
+    "javascript",
+    "face-api",
+    "webcam",
+    "biometric"
+  ],
+  "author": "Face Attendance System",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "serve": "^14.2.1"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.0",
+    "xlsx": "^0.18.5",
+    "jspdf": "^2.5.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/face-attendance-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/face-attendance-system/issues"
+  },
+  "homepage": "https://github.com/your-username/face-attendance-system#readme"
+}
