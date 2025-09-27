@@ -37,13 +37,15 @@ class RegistrationManager {
     async loadFaceAPI() {
         const loadingOverlay = document.getElementById('loadingOverlay');
         const faceInstructions = document.getElementById('faceInstructions');
+        const facePositionOverlay = document.getElementById('facePositionOverlay');
         
         if (loadingOverlay) {
             loadingOverlay.classList.remove('hidden');
         }
         
-        if (faceInstructions) {
-            faceInstructions.classList.remove('hidden');
+        // Hide face positioning overlay during loading
+        if (facePositionOverlay) {
+            facePositionOverlay.classList.add('hidden');
         }
 
         try {
@@ -54,8 +56,9 @@ class RegistrationManager {
                 if (loadingOverlay) {
                     loadingOverlay.classList.add('hidden');
                 }
-                if (faceInstructions) {
-                    faceInstructions.classList.remove('hidden');
+                // Show face positioning overlay
+                if (facePositionOverlay) {
+                    facePositionOverlay.classList.remove('hidden');
                 }
             } else {
                 this.updateModelStatus('Failed to load', 'red');
@@ -158,6 +161,14 @@ class RegistrationManager {
             const detections = await window.faceAPIManager.detectFaces(this.webcam);
             this.updateFaceDetectionStatus(detections.length > 0);
             this.drawFaceBoxes(detections);
+            
+            // Hide face positioning overlay when face is detected
+            const facePositionOverlay = document.getElementById('facePositionOverlay');
+            if (detections.length > 0 && facePositionOverlay) {
+                facePositionOverlay.classList.add('hidden');
+            } else if (detections.length === 0 && facePositionOverlay) {
+                facePositionOverlay.classList.remove('hidden');
+            }
         } catch (error) {
             // Don't log detection errors continuously as they're expected when no face is detected
             // console.error('Face detection error:', error);
@@ -398,6 +409,12 @@ class RegistrationManager {
         const captureBtn = document.getElementById('captureBtn');
         if (captureBtn) {
             captureBtn.disabled = true;
+        }
+        
+        // Show face positioning overlay again
+        const facePositionOverlay = document.getElementById('facePositionOverlay');
+        if (facePositionOverlay) {
+            facePositionOverlay.classList.remove('hidden');
         }
     }
 
