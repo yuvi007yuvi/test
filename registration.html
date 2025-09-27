@@ -78,6 +78,23 @@
                                 </button>
                             </div>
                         </form>
+                        
+                        <!-- Webcam Access Instructions -->
+                        <div id="webcamInstructions" class="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
+                            <h3 class="font-semibold text-yellow-800 mb-2">Webcam Access Required</h3>
+                            <p class="text-yellow-700 text-sm mb-3">
+                                To use facial recognition, you need to allow camera access. 
+                                If you're seeing this message:
+                            </p>
+                            <ul class="text-yellow-700 text-sm list-disc pl-5 space-y-1 mb-3">
+                                <li>Click the camera icon in your browser's address bar</li>
+                                <li>Select "Allow" when prompted for camera access</li>
+                                <li>Refresh the page after allowing access</li>
+                            </ul>
+                            <p class="text-yellow-700 text-sm">
+                                <strong>Note:</strong> For best security, this feature works only on localhost or HTTPS websites.
+                            </p>
+                        </div>
                     </div>
                     
                     <!-- Webcam Preview -->
@@ -95,6 +112,15 @@
                                     <div class="text-white text-center px-4">
                                         <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-white mx-auto mb-2"></div>
                                         <p class="text-xs sm:text-sm">Loading face detection...</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Face Detection Instructions -->
+                                <div id="faceInstructions" class="absolute inset-0 flex items-center justify-center text-white text-center p-4 bg-black bg-opacity-70 hidden">
+                                    <div>
+                                        <i class="material-icons text-4xl mb-2">face</i>
+                                        <p class="text-sm sm:text-base">Position your face in the frame</p>
+                                        <p class="text-xs sm:text-sm mt-1">Make sure your face is clearly visible</p>
                                     </div>
                                 </div>
                             </div>
@@ -117,6 +143,10 @@
                                 <div class="flex items-center">
                                     <div id="modelLoaded" class="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full mr-2"></div>
                                     <span>Face API: <span id="modelStatus">Loading...</span></span>
+                                </div>
+                                <div class="flex items-center mt-1 sm:mt-2">
+                                    <div id="cameraStatusIndicator" class="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full mr-2"></div>
+                                    <span>Camera: <span id="cameraStatus">Not Ready</span></span>
                                 </div>
                             </div>
                         </div>
@@ -144,6 +174,13 @@
 
     <!-- Notification Container -->
     <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2024 Face Attendance System. Made with 💖 by Yuvraj</p>
+        </div>
+    </footer>
 
     <!-- Scripts -->
     <script type="module" src="firebase/firebase-config.js"></script>
