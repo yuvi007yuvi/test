@@ -79,6 +79,13 @@
                             </div>
                         </form>
                         
+                        <!-- Manual Detection Button -->
+                        <div class="mt-4">
+                            <button id="manualDetectBtn" class="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors text-sm sm:text-base">
+                                <i class="material-icons mr-2 text-sm sm:text-base">autorenew</i>Manual Face Detection
+                            </button>
+                        </div>
+                        
                         <!-- Webcam Access Instructions -->
                         <div id="webcamInstructions" class="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
                             <h3 class="font-semibold text-yellow-800 mb-2">Webcam Access Required</h3>
@@ -205,5 +212,36 @@
     <script src="lib/face-api.min.js"></script>
     <script src="js/face-api-setup.js"></script>
     <script src="js/registration.js"></script>
+    
+    <script>
+        // Add event listener for manual detection button
+        document.addEventListener('DOMContentLoaded', function() {
+            const manualDetectBtn = document.getElementById('manualDetectBtn');
+            if (manualDetectBtn && window.registrationManager) {
+                manualDetectBtn.addEventListener('click', async function() {
+                    if (window.registrationManager.webcam && window.registrationManager.webcam.readyState === 4) {
+                        try {
+                            // Show notification
+                            if (typeof showNotification === 'function') {
+                                showNotification('Running manual face detection...', 'info');
+                            }
+                            
+                            // Run detection
+                            await window.registrationManager.detectFaces();
+                        } catch (error) {
+                            console.error('Manual detection error:', error);
+                            if (typeof showNotification === 'function') {
+                                showNotification('Manual detection failed: ' + error.message, 'error');
+                            }
+                        }
+                    } else {
+                        if (typeof showNotification === 'function') {
+                            showNotification('Camera not ready for detection', 'warning');
+                        }
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

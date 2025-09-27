@@ -5,7 +5,9 @@ class FaceAPIManager {
         this.isLoaded = false;
         this.isLoading = false;
         this.modelsPath = './lib/models/';
-        this.faceDetectionOptions = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 });
+        this.faceDetectionOptions = new faceapi.SsdMobilenetv1Options({ 
+            minConfidence: 0.3 // Lowered confidence for better detection
+        });
     }
 
     // Initialize face-api.js models
@@ -14,18 +16,25 @@ class FaceAPIManager {
         if (this.isLoading) return false;
 
         this.isLoading = true;
-        console.log('Loading face-api.js models...');
+        console.log('Loading face-api.js models from:', this.modelsPath);
 
         try {
             // Load models with error handling
             await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelsPath);
+            console.log('SSD MobileNet v1 model loaded');
+            
             await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelsPath);
+            console.log('Face Landmark 68 model loaded');
+            
             await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelsPath);
+            console.log('Face Recognition model loaded');
+            
             await faceapi.nets.faceExpressionNet.loadFromUri(this.modelsPath);
+            console.log('Face Expression model loaded');
 
             this.isLoaded = true;
             this.isLoading = false;
-            console.log('Face-api.js models loaded successfully');
+            console.log('All face-api.js models loaded successfully');
             return true;
         } catch (error) {
             console.error('Error loading face-api.js models:', error);
@@ -34,15 +43,23 @@ class FaceAPIManager {
             try {
                 console.log('Attempting to load models from CDN...');
                 const cdnPath = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';
-                await faceapi.nets.ssdMobilenetv1.loadFromUri(cdnPath);
-                await faceapi.nets.faceLandmark68Net.loadFromUri(cdnPath);
-                await faceapi.nets.faceRecognitionNet.loadFromUri(cdnPath);
-                await faceapi.nets.faceExpressionNet.loadFromUri(cdnPath);
-                
                 this.modelsPath = cdnPath;
+                
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelsPath);
+                console.log('SSD MobileNet v1 model loaded from CDN');
+                
+                await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelsPath);
+                console.log('Face Landmark 68 model loaded from CDN');
+                
+                await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelsPath);
+                console.log('Face Recognition model loaded from CDN');
+                
+                await faceapi.nets.faceExpressionNet.loadFromUri(this.modelsPath);
+                console.log('Face Expression model loaded from CDN');
+                
                 this.isLoaded = true;
                 this.isLoading = false;
-                console.log('Face-api.js models loaded successfully from CDN');
+                console.log('All face-api.js models loaded successfully from CDN');
                 return true;
             } catch (cdnError) {
                 console.error('Error loading face-api.js models from CDN:', cdnError);
@@ -78,7 +95,7 @@ class FaceAPIManager {
         const detections = await this.detectFaces(imageElement);
         
         if (detections.length === 0) {
-            throw new Error('No face detected in the image. Please ensure your face is clearly visible in the camera.');
+            throw new Error('No face detected in the image. Please ensure your face is clearly visible in the camera and well-lit.');
         }
 
         if (detections.length > 1) {
