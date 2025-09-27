@@ -6,10 +6,14 @@ class RegistrationManager {
         this.stream = null;
         this.faceDescriptor = null;
         this.isCaptured = false;
+        this.detectionInterval = null;
         this.init();
     }
 
     async init() {
+        // Show instructions
+        this.showWebcamInstructions();
+        
         // Load face-api.js models
         await this.loadFaceAPI();
         
@@ -20,33 +24,50 @@ class RegistrationManager {
         await this.initializeWebcam();
     }
 
+    showWebcamInstructions() {
+        // Show instructions if we're not on localhost or HTTPS
+        if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            const instructions = document.getElementById('webcamInstructions');
+            if (instructions) {
+                instructions.classList.remove('hidden');
+            }
+        }
+    }
+
     async loadFaceAPI() {
         const loadingOverlay = document.getElementById('loadingOverlay');
+        const faceInstructions = document.getElementById('faceInstructions');
+        
         if (loadingOverlay) {
             loadingOverlay.classList.remove('hidden');
+        }
+        
+        if (faceInstructions) {
+            faceInstructions.classList.remove('hidden');
         }
 
         try {
             const loaded = await window.faceAPIManager.loadModels();
             if (loaded) {
                 this.updateModelStatus('Ready', 'green');
+                // Hide loading and show instructions
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                }
+                if (faceInstructions) {
+                    faceInstructions.classList.remove('hidden');
+                }
             } else {
                 this.updateModelStatus('Failed to load', 'red');
-                if (typeof showNotification === 'function') {
-                    showNotification('Failed to load face detection models', 'error');
-                } else {
-                    console.error('Failed to load face detection models');
+                this.showNotification('Failed to load face detection models', 'error');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
                 }
             }
         } catch (error) {
             console.error('Error loading face API:', error);
             this.updateModelStatus('Error', 'red');
-            if (typeof showNotification === 'function') {
-                showNotification('Error loading face detection models', 'error');
-            } else {
-                console.error('Error loading face detection models');
-            }
-        } finally {
+            this.showNotification('Error loading face detection models', 'error');
             if (loadingOverlay) {
                 loadingOverlay.classList.add('hidden');
             }
@@ -75,11 +96,7 @@ class RegistrationManager {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             console.error('WebRTC is not supported in this browser');
             this.updateCameraStatus('Not supported', 'red');
-            if (typeof showNotification === 'function') {
-                showNotification('Webcam is not supported in this browser', 'error');
-            } else {
-                console.error('Webcam is not supported in this browser');
-            }
+            this.showNotification('Webcam is not supported in this browser. Try Chrome, Firefox, or Edge.', 'error');
             return;
         }
 
@@ -98,15 +115,24 @@ class RegistrationManager {
                 this.webcam.onloadedmetadata = () => {
                     this.webcam.play();
                     this.updateCameraStatus('Active', 'green');
+                    // Hide instructions once camera is active
+                    const faceInstructions = document.getElementById('faceInstructions');
+                    if (faceInstructions) {
+                        faceInstructions.classList.add('hidden');
+                    }
                 };
             }
         } catch (error) {
             console.error('Error accessing webcam:', error);
             this.updateCameraStatus('Error', 'red');
-            if (typeof showNotification === 'function') {
-                showNotification('Unable to access webcam. Please check permissions.', 'error');
+            
+            // Show specific error message based on error type
+            if (error.name === 'NotAllowedError') {
+                this.showNotification('Camera access denied. Please allow camera access when prompted.', 'error');
+            } else if (error.name === 'NotFoundError') {
+                this.showNotification('No camera found. Please connect a camera to use this feature.', 'error');
             } else {
-                console.error('Unable to access webcam. Please check permissions.');
+                this.showNotification('Unable to access webcam. Please check permissions and try again.', 'error');
             }
         }
     }
@@ -114,20 +140,28 @@ class RegistrationManager {
     startFaceDetection() {
         if (!this.webcam) return;
 
-        const detectFaces = async () => {
-            if (this.webcam && this.webcam.readyState === 4) {
-                try {
-                    const detections = await window.faceAPIManager.detectFaces(this.webcam);
-                    this.updateFaceDetectionStatus(detections.length > 0);
-                    this.drawFaceBoxes(detections);
-                } catch (error) {
-                    console.error('Face detection error:', error);
-                }
-            }
-            requestAnimationFrame(detectFaces);
-        };
+        // Clear any existing interval
+        if (this.detectionInterval) {
+            clearInterval(this.detectionInterval);
+        }
 
-        detectFaces();
+        // Run face detection every 100ms
+        this.detectionInterval = setInterval(() => {
+            if (this.webcam && this.webcam.readyState === 4) {
+                this.detectFaces();
+            }
+        }, 100);
+    }
+
+    async detectFaces() {
+        try {
+            const detections = await window.faceAPIManager.detectFaces(this.webcam);
+            this.updateFaceDetectionStatus(detections.length > 0);
+            this.drawFaceBoxes(detections);
+        } catch (error) {
+            // Don't log detection errors continuously as they're expected when no face is detected
+            // console.error('Face detection error:', error);
+        }
     }
 
     drawFaceBoxes(detections) {
@@ -178,7 +212,7 @@ class RegistrationManager {
 
     updateCameraStatus(status, color) {
         const statusElement = document.getElementById('cameraStatus');
-        const indicatorElement = document.getElementById('cameraStatus');
+        const indicatorElement = document.getElementById('cameraStatusIndicator');
 
         if (statusElement) statusElement.textContent = status;
         if (indicatorElement) {
@@ -190,11 +224,7 @@ class RegistrationManager {
         if (!this.webcam || this.isCaptured) return;
 
         try {
-            if (typeof showNotification === 'function') {
-                showNotification('Capturing face...', 'info');
-            } else {
-                console.log('Capturing face...');
-            }
+            this.showNotification('Capturing face...', 'info');
             
             // Extract face descriptor
             this.faceDescriptor = await window.faceAPIManager.extractFaceDescriptor(this.webcam);
@@ -211,20 +241,12 @@ class RegistrationManager {
 
             // Update UI
             this.updateCaptureStatus('Face captured successfully!', 'success');
-            if (typeof showNotification === 'function') {
-                showNotification('Face captured successfully!', 'success');
-            } else {
-                console.log('Face captured successfully!');
-            }
+            this.showNotification('Face captured successfully!', 'success');
 
         } catch (error) {
             console.error('Error capturing face:', error);
             this.updateCaptureStatus(error.message, 'error');
-            if (typeof showNotification === 'function') {
-                showNotification(error.message, 'error');
-            } else {
-                console.error(error.message);
-            }
+            this.showNotification('Face capture failed: ' + error.message, 'error');
         }
     }
 
@@ -237,15 +259,20 @@ class RegistrationManager {
         }
     }
 
+    showNotification(message, type = 'info') {
+        // Use the global showNotification function if available, otherwise show in status
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(message, type);
+        } else {
+            this.updateCaptureStatus(message, type);
+        }
+    }
+
     async handleFormSubmit(e) {
         e.preventDefault();
         
         if (!this.isCaptured) {
-            if (typeof showNotification === 'function') {
-                showNotification('Please capture your face first', 'warning');
-            } else {
-                console.warn('Please capture your face first');
-            }
+            this.showNotification('Please capture your face first', 'warning');
             return;
         }
 
@@ -291,21 +318,13 @@ class RegistrationManager {
             const imageUrl = await getDownloadURL(storageRef);
             await updateDoc(userRef, { faceImageUrl: imageUrl });
 
-            if (typeof showNotification === 'function') {
-                showNotification('User registered successfully!', 'success');
-            } else {
-                console.log('User registered successfully!');
-            }
+            this.showNotification('User registered successfully!', 'success');
             this.showSuccessModal();
             this.resetForm();
 
         } catch (error) {
             console.error('Registration error:', error);
-            if (typeof showNotification === 'function') {
-                showNotification('Registration failed: ' + error.message, 'error');
-            } else {
-                console.error('Registration failed: ' + error.message);
-            }
+            this.showNotification('Registration failed: ' + error.message, 'error');
         } finally {
             if (window.appUtils && typeof window.appUtils.hideLoading === 'function') {
                 window.appUtils.hideLoading(registerBtn, originalText);
@@ -318,33 +337,26 @@ class RegistrationManager {
 
     validateFormData(data) {
         if (!data.name || data.name.trim().length < 2) {
-            if (typeof showNotification === 'function') {
-                showNotification('Please enter a valid name', 'error');
-            } else {
-                console.error('Please enter a valid name');
-            }
+            this.showNotification('Please enter a valid name', 'error');
             return false;
         }
 
-        if (!data.email || !appUtils.isValidEmail(data.email)) {
-            if (typeof showNotification === 'function') {
-                showNotification('Please enter a valid email address', 'error');
-            } else {
-                console.error('Please enter a valid email address');
-            }
+        if (!data.email || !this.isValidEmail(data.email)) {
+            this.showNotification('Please enter a valid email address', 'error');
             return false;
         }
 
         if (!data.role) {
-            if (typeof showNotification === 'function') {
-                showNotification('Please select a role', 'error');
-            } else {
-                console.error('Please select a role');
-            }
+            this.showNotification('Please select a role', 'error');
             return false;
         }
 
         return true;
+    }
+
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     }
 
     dataURLToBlob(dataURL) {
@@ -381,10 +393,22 @@ class RegistrationManager {
         if (statusElement) {
             statusElement.classList.add('hidden');
         }
+        
+        // Re-enable capture button
+        const captureBtn = document.getElementById('captureBtn');
+        if (captureBtn) {
+            captureBtn.disabled = true;
+        }
     }
 
     // Cleanup when page unloads
     cleanup() {
+        // Clear detection interval
+        if (this.detectionInterval) {
+            clearInterval(this.detectionInterval);
+        }
+        
+        // Stop webcam stream
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
         }

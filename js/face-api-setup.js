@@ -6,7 +6,6 @@ class FaceAPIManager {
         this.isLoading = false;
         this.modelsPath = './lib/models/';
         this.faceDetectionOptions = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 });
-        this.faceRecognitionOptions = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 });
     }
 
     // Initialize face-api.js models
@@ -18,12 +17,11 @@ class FaceAPIManager {
         console.log('Loading face-api.js models...');
 
         try {
-            await Promise.all([
-                faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelsPath),
-                faceapi.nets.faceLandmark68Net.loadFromUri(this.modelsPath),
-                faceapi.nets.faceRecognitionNet.loadFromUri(this.modelsPath),
-                faceapi.nets.faceExpressionNet.loadFromUri(this.modelsPath)
-            ]);
+            // Load models with error handling
+            await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelsPath);
+            await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelsPath);
+            await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelsPath);
+            await faceapi.nets.faceExpressionNet.loadFromUri(this.modelsPath);
 
             this.isLoaded = true;
             this.isLoading = false;
@@ -31,16 +29,15 @@ class FaceAPIManager {
             return true;
         } catch (error) {
             console.error('Error loading face-api.js models:', error);
+            
             // Try to load from CDN as fallback
             try {
                 console.log('Attempting to load models from CDN...');
                 const cdnPath = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';
-                await Promise.all([
-                    faceapi.nets.ssdMobilenetv1.loadFromUri(cdnPath),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(cdnPath),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(cdnPath),
-                    faceapi.nets.faceExpressionNet.loadFromUri(cdnPath)
-                ]);
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(cdnPath);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(cdnPath);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(cdnPath);
+                await faceapi.nets.faceExpressionNet.loadFromUri(cdnPath);
                 
                 this.modelsPath = cdnPath;
                 this.isLoaded = true;
@@ -66,12 +63,12 @@ class FaceAPIManager {
             const detections = await faceapi
                 .detectAllFaces(imageElement, this.faceDetectionOptions)
                 .withFaceLandmarks()
-                .withFaceDescriptors()
-                .withFaceExpressions();
+                .withFaceDescriptors();
 
             return detections;
         } catch (error) {
-            console.error('Error detecting faces:', error);
+            // Don't log continuously as this is expected when no face is detected
+            // console.error('Error detecting faces:', error);
             return [];
         }
     }
@@ -81,7 +78,7 @@ class FaceAPIManager {
         const detections = await this.detectFaces(imageElement);
         
         if (detections.length === 0) {
-            throw new Error('No face detected in the image');
+            throw new Error('No face detected in the image. Please ensure your face is clearly visible in the camera.');
         }
 
         if (detections.length > 1) {
@@ -93,12 +90,21 @@ class FaceAPIManager {
 
     // Compare two face descriptors
     compareFaces(descriptor1, descriptor2, threshold = 0.6) {
-        const distance = faceapi.euclideanDistance(descriptor1, descriptor2);
-        return {
-            distance: distance,
-            isMatch: distance < threshold,
-            confidence: Math.max(0, 1 - distance)
-        };
+        if (!descriptor1 || !descriptor2) {
+            return { distance: 1, isMatch: false, confidence: 0 };
+        }
+        
+        try {
+            const distance = faceapi.euclideanDistance(descriptor1, descriptor2);
+            return {
+                distance: distance,
+                isMatch: distance < threshold,
+                confidence: Math.max(0, 1 - distance)
+            };
+        } catch (error) {
+            console.error('Error comparing faces:', error);
+            return { distance: 1, isMatch: false, confidence: 0 };
+        }
     }
 
     // Draw face detection boxes on canvas
@@ -108,7 +114,6 @@ class FaceAPIManager {
 
         detections.forEach(detection => {
             const { x, y, width, height } = detection.detection.box;
-            const { expressions } = detection;
 
             // Draw bounding box
             ctx.strokeStyle = options.color || '#10b981';
@@ -122,17 +127,6 @@ class FaceAPIManager {
                 ctx.fillText(
                     `${Math.round(detection.detection.score * 100)}%`,
                     x, y - 5
-                );
-            }
-
-            // Draw expressions
-            if (options.showExpressions && expressions) {
-                const dominantExpression = Object.keys(expressions).reduce((a, b) => 
-                    expressions[a] > expressions[b] ? a : b
-                );
-                ctx.fillText(
-                    dominantExpression,
-                    x, y + height + 15
                 );
             }
         });

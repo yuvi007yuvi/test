@@ -107,6 +107,22 @@
                                 <video id="webcam" autoplay muted playsinline class="w-full h-full object-cover"></video>
                                 <canvas id="faceCanvas" class="absolute inset-0 pointer-events-none"></canvas>
                                 
+                                <!-- Face Positioning Overlay -->
+                                <div id="facePositionOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div class="relative w-64 h-64 max-w-full max-h-full">
+                                        <!-- Outer circle -->
+                                        <div class="absolute inset-0 border-4 border-white rounded-full opacity-70"></div>
+                                        <!-- Inner circle -->
+                                        <div class="absolute inset-8 border-2 border-white rounded-full opacity-50"></div>
+                                        <!-- Center indicator -->
+                                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-green-500 rounded-full opacity-80"></div>
+                                        <!-- Face icon -->
+                                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white opacity-70">
+                                            <i class="material-icons text-4xl">face</i>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <!-- Loading Overlay -->
                                 <div id="loadingOverlay" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
                                     <div class="text-white text-center px-4">
