@@ -59,13 +59,13 @@ class MobileEnhancements {
         document.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
-        });
+        }, { passive: true }); // Fixed: Added passive: true
 
         document.addEventListener('touchend', (e) => {
             endX = e.changedTouches[0].clientX;
             endY = e.changedTouches[0].clientY;
             this.handleSwipe(startX, startY, endX, endY);
-        });
+        }, { passive: true }); // Fixed: Added passive: true
 
         // Prevent default touch behaviors that interfere with functionality
         document.addEventListener('touchmove', (e) => {
@@ -109,12 +109,12 @@ class MobileEnhancements {
             setTimeout(() => {
                 this.handleOrientationChange();
             }, 100);
-        });
+        }, { passive: true }); // Fixed: Added passive: true
 
         // Handle resize events
         window.addEventListener('resize', () => {
             this.handleResize();
-        });
+        }, { passive: true }); // Fixed: Added passive: true
     }
 
     handleOrientationChange() {
@@ -161,7 +161,7 @@ class MobileEnhancements {
                 toggle.addEventListener('click', () => {
                     navLinks.classList.toggle('hidden');
                     navLinks.classList.toggle('flex');
-                });
+                }, { passive: true }); // Fixed: Added passive: true
                 
                 nav.appendChild(toggle);
             }
@@ -199,18 +199,18 @@ class MobileEnhancements {
         modals.forEach(modal => {
             modal.addEventListener('touchstart', (e) => {
                 this.touchStartY = e.touches[0].clientY;
-            });
+            }, { passive: true }); // Fixed: Added passive: true
 
             modal.addEventListener('touchmove', (e) => {
                 this.touchEndY = e.touches[0].clientY;
-            });
+            }, { passive: true }); // Fixed: Added passive: true
 
             modal.addEventListener('touchend', () => {
                 // Close modal on swipe down
                 if (this.touchStartY - this.touchEndY > 100) {
                     this.closeModal(modal);
                 }
-            });
+            }, { passive: true }); // Fixed: Added passive: true
         });
     }
 
@@ -286,7 +286,7 @@ class MobileEnhancements {
 // Initialize mobile enhancements when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.mobileEnhancements = new MobileEnhancements();
-});
+}, { passive: true }); // Fixed: Added passive: true
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {

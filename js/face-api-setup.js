@@ -31,8 +31,27 @@ class FaceAPIManager {
             return true;
         } catch (error) {
             console.error('Error loading face-api.js models:', error);
-            this.isLoading = false;
-            return false;
+            // Try to load from CDN as fallback
+            try {
+                console.log('Attempting to load models from CDN...');
+                const cdnPath = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';
+                await Promise.all([
+                    faceapi.nets.ssdMobilenetv1.loadFromUri(cdnPath),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(cdnPath),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(cdnPath),
+                    faceapi.nets.faceExpressionNet.loadFromUri(cdnPath)
+                ]);
+                
+                this.modelsPath = cdnPath;
+                this.isLoaded = true;
+                this.isLoading = false;
+                console.log('Face-api.js models loaded successfully from CDN');
+                return true;
+            } catch (cdnError) {
+                console.error('Error loading face-api.js models from CDN:', cdnError);
+                this.isLoading = false;
+                return false;
+            }
         }
     }
 
@@ -123,7 +142,8 @@ class FaceAPIManager {
     getStatus() {
         return {
             isLoaded: this.isLoaded,
-            isLoading: this.isLoading
+            isLoading: this.isLoading,
+            modelsPath: this.modelsPath
         };
     }
 

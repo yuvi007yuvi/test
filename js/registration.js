@@ -32,12 +32,20 @@ class RegistrationManager {
                 this.updateModelStatus('Ready', 'green');
             } else {
                 this.updateModelStatus('Failed to load', 'red');
-                showNotification('Failed to load face detection models', 'error');
+                if (typeof showNotification === 'function') {
+                    showNotification('Failed to load face detection models', 'error');
+                } else {
+                    console.error('Failed to load face detection models');
+                }
             }
         } catch (error) {
             console.error('Error loading face API:', error);
             this.updateModelStatus('Error', 'red');
-            showNotification('Error loading face detection models', 'error');
+            if (typeof showNotification === 'function') {
+                showNotification('Error loading face detection models', 'error');
+            } else {
+                console.error('Error loading face detection models');
+            }
         } finally {
             if (loadingOverlay) {
                 loadingOverlay.classList.add('hidden');
@@ -63,6 +71,18 @@ class RegistrationManager {
     }
 
     async initializeWebcam() {
+        // Check if mediaDevices is available
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error('WebRTC is not supported in this browser');
+            this.updateCameraStatus('Not supported', 'red');
+            if (typeof showNotification === 'function') {
+                showNotification('Webcam is not supported in this browser', 'error');
+            } else {
+                console.error('Webcam is not supported in this browser');
+            }
+            return;
+        }
+
         try {
             this.stream = await navigator.mediaDevices.getUserMedia({
                 video: {
@@ -83,7 +103,11 @@ class RegistrationManager {
         } catch (error) {
             console.error('Error accessing webcam:', error);
             this.updateCameraStatus('Error', 'red');
-            showNotification('Unable to access webcam. Please check permissions.', 'error');
+            if (typeof showNotification === 'function') {
+                showNotification('Unable to access webcam. Please check permissions.', 'error');
+            } else {
+                console.error('Unable to access webcam. Please check permissions.');
+            }
         }
     }
 
@@ -166,7 +190,11 @@ class RegistrationManager {
         if (!this.webcam || this.isCaptured) return;
 
         try {
-            showNotification('Capturing face...', 'info');
+            if (typeof showNotification === 'function') {
+                showNotification('Capturing face...', 'info');
+            } else {
+                console.log('Capturing face...');
+            }
             
             // Extract face descriptor
             this.faceDescriptor = await window.faceAPIManager.extractFaceDescriptor(this.webcam);
@@ -183,12 +211,20 @@ class RegistrationManager {
 
             // Update UI
             this.updateCaptureStatus('Face captured successfully!', 'success');
-            showNotification('Face captured successfully!', 'success');
+            if (typeof showNotification === 'function') {
+                showNotification('Face captured successfully!', 'success');
+            } else {
+                console.log('Face captured successfully!');
+            }
 
         } catch (error) {
             console.error('Error capturing face:', error);
             this.updateCaptureStatus(error.message, 'error');
-            showNotification(error.message, 'error');
+            if (typeof showNotification === 'function') {
+                showNotification(error.message, 'error');
+            } else {
+                console.error(error.message);
+            }
         }
     }
 
@@ -205,7 +241,11 @@ class RegistrationManager {
         e.preventDefault();
         
         if (!this.isCaptured) {
-            showNotification('Please capture your face first', 'warning');
+            if (typeof showNotification === 'function') {
+                showNotification('Please capture your face first', 'warning');
+            } else {
+                console.warn('Please capture your face first');
+            }
             return;
         }
 
@@ -227,7 +267,12 @@ class RegistrationManager {
         // Show loading state
         const registerBtn = document.getElementById('registerBtn');
         const originalText = registerBtn.innerHTML;
-        appUtils.showLoading(registerBtn, 'Registering...');
+        if (window.appUtils && typeof window.appUtils.showLoading === 'function') {
+            window.appUtils.showLoading(registerBtn, 'Registering...');
+        } else {
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Registering...</div>';
+        }
 
         try {
             // Import Firebase functions
@@ -246,31 +291,56 @@ class RegistrationManager {
             const imageUrl = await getDownloadURL(storageRef);
             await updateDoc(userRef, { faceImageUrl: imageUrl });
 
-            showNotification('User registered successfully!', 'success');
+            if (typeof showNotification === 'function') {
+                showNotification('User registered successfully!', 'success');
+            } else {
+                console.log('User registered successfully!');
+            }
             this.showSuccessModal();
             this.resetForm();
 
         } catch (error) {
             console.error('Registration error:', error);
-            showNotification('Registration failed: ' + error.message, 'error');
+            if (typeof showNotification === 'function') {
+                showNotification('Registration failed: ' + error.message, 'error');
+            } else {
+                console.error('Registration failed: ' + error.message);
+            }
         } finally {
-            appUtils.hideLoading(registerBtn, originalText);
+            if (window.appUtils && typeof window.appUtils.hideLoading === 'function') {
+                window.appUtils.hideLoading(registerBtn, originalText);
+            } else {
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = originalText;
+            }
         }
     }
 
     validateFormData(data) {
         if (!data.name || data.name.trim().length < 2) {
-            showNotification('Please enter a valid name', 'error');
+            if (typeof showNotification === 'function') {
+                showNotification('Please enter a valid name', 'error');
+            } else {
+                console.error('Please enter a valid name');
+            }
             return false;
         }
 
         if (!data.email || !appUtils.isValidEmail(data.email)) {
-            showNotification('Please enter a valid email address', 'error');
+            if (typeof showNotification === 'function') {
+                showNotification('Please enter a valid email address', 'error');
+            } else {
+                console.error('Please enter a valid email address');
+            }
             return false;
         }
 
         if (!data.role) {
-            showNotification('Please select a role', 'error');
+            if (typeof showNotification === 'function') {
+                showNotification('Please select a role', 'error');
+            } else {
+                console.error('Please select a role');
+            }
             return false;
         }
 
