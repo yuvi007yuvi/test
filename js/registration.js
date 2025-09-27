@@ -330,21 +330,32 @@ class RegistrationManager {
         }
 
         try {
-            // Import Firebase functions
-            const { collection, addDoc, updateDoc } = await import('firebase/firestore');
-            const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+            // Use the globally available Firebase services instead of dynamic imports
+            // These are exported from firebase-config.js
+            if (!window.db || !window.storage) {
+                throw new Error('Firebase services not initialized');
+            }
+
+            // Save user data to Firestore using the global db instance
+            const userRef = await window.db.collection('users').add(userData);
             
-            // Save user data to Firestore
-            const userRef = await addDoc(collection(db, 'users'), userData);
-            
-            // Upload face image to Firebase Storage
-            const faceImageBlob = this.dataURLToBlob(this.faceImage);
-            const storageRef = ref(storage, `face_images/${userRef.id}.jpg`);
-            await uploadBytes(storageRef, faceImageBlob);
-            
-            // Update user document with image URL
-            const imageUrl = await getDownloadURL(storageRef);
-            await updateDoc(userRef, { faceImageUrl: imageUrl });
+            // Upload face image to Firebase Storage using the global storage instance
+            if (this.faceImage) {
+                const faceImageBlob = this.dataURLToBlob(this.faceImage);
+                
+                // Create a reference to the file location in Storage
+                const storageRef = window.storage.ref();
+                const faceImageRef = storageRef.child(`face_images/${userRef.id}.jpg`);
+                
+                // Upload the file
+                await faceImageRef.put(faceImageBlob);
+                
+                // Get the download URL
+                const imageUrl = await faceImageRef.getDownloadURL();
+                
+                // Update user document with image URL
+                await userRef.update({ faceImageUrl: imageUrl });
+            }
 
             this.showNotification('User registered successfully!', 'success');
             this.showSuccessModal();

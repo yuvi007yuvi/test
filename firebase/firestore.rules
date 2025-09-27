@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection
+    match /users/{userId} {
+      // Allow users to read their own document or admins to read any
+      allow read: if request.auth != null && 
+        (request.auth.uid == userId || 
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true);
+      
+      // Allow users to create their own document or admins to create any
+      allow create: if request.auth != null && 
+        (request.auth.uid == userId || 
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true);
+      
+      // Allow users to update their own document or admins to update any
+      allow update: if request.auth != null && 
+        (request.auth.uid == userId || 
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true);
+      
+      // Validate user data
+      allow write: if validateUser(request.resource.data);
+    }
+    
+    // Attendance collection
+    match /attendance/{attendanceId} {
+      // Allow users to read their own attendance or admins to read any
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.userId || 
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true);
+      
+      // Allow users to create their own attendance records
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+      
+      // Allow users to update their own attendance or admins to update any
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.userId || 
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true);
+      
+      // Validate attendance data
+      allow write: if validateAttendance(request.resource.data);
+    }
+    
+    // Admins collection
+    match /admins/{adminId} {
+      // Only admins can read admin documents
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true;
+      
+      // Only admins can write admin documents
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Face images in Storage (not Firestore)
+    match /face_images/{imageId} {
+      // Users can read their own face images or admins can read any
+      allow read: if request.auth != null && 
+        (request.auth.uid == imageId.split('.')[0] || 
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true);
+      
+      // Users can create their own face images
+      allow create: if request.auth != null && 
+        request.auth.uid == imageId.split('.')[0];
+    }
+    
+    // Functions for validation
+    function validateUser(data) {
+      return data.keys().hasAll(['name', 'email', 'role', 'createdAt', 'isActive']) &&
+        data.name is string && data.name.size() > 0 &&
+        data.email is string && data.email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$') &&
+        data.role is string && data.role.size() > 0 &&
+        (data.role == 'employee' || data.role == 'manager' || data.role == 'admin' || data.role == 'student' || data.role == 'teacher') &&
+        data.isActive is bool;
+    }
+    
+    function validateAttendance(data) {
+      return data.keys().hasAll(['userId', 'timestamp', 'date', 'time']) &&
+        data.userId is string && data.userId.size() > 0 &&
+        (data.timestamp is string || data.timestamp is number) &&
+        data.date is string && data.date.size() > 0 &&
+        data.time is string && data.time.size() > 0;
+    }
+  }
+}

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Detection Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen font-inter">
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+                <h1 class="text-2xl font-bold text-white">Face Detection Test</h1>
+                <p class="text-indigo-100">Diagnostic tool for face detection issues</p>
+            </div>
+            
+            <div class="p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Test Controls -->
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Test Controls</h2>
+                        
+                        <div class="space-y-4">
+                            <button id="startCameraBtn" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                                <i class="material-icons mr-2">videocam</i>Start Camera
+                            </button>
+                            
+                            <button id="loadModelBtn" class="w-full bg-yellow-500 text-white py-3 px-4 rounded-lg hover:bg-yellow-600 transition-colors font-medium">
+                                <i class="material-icons mr-2">cloud_download</i>Load Face Models
+                            </button>
+                            
+                            <button id="detectFaceBtn" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i class="material-icons mr-2">face</i>Detect Face
+                            </button>
+                            
+                            <button id="resetBtn" class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium">
+                                <i class="material-icons mr-2">refresh</i>Reset Test
+                            </button>
+                        </div>
+                        
+                        <!-- Status Panel -->
+                        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                            <h3 class="font-semibold text-gray-900 mb-3">Status</h3>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span>Camera:</span>
+                                    <span id="cameraStatus" class="font-medium">Not started</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Models:</span>
+                                    <span id="modelStatus" class="font-medium">Not loaded</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Face Detected:</span>
+                                    <span id="faceStatus" class="font-medium">No</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Log Panel -->
+                        <div class="mt-6 p-4 bg-gray-900 text-green-400 rounded-lg font-mono text-xs">
+                            <h3 class="font-semibold text-white mb-2">Log</h3>
+                            <div id="logContent" class="h-40 overflow-y-auto"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Camera Preview -->
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Camera Preview</h2>
+                        
+                        <div class="relative bg-black rounded-lg overflow-hidden" style="aspect-ratio: 4/3;">
+                            <video id="webcam" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                            <canvas id="overlayCanvas" class="absolute inset-0"></canvas>
+                            
+                            <!-- Face Positioning Guide -->
+                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div class="relative w-64 h-64 max-w-full max-h-full">
+                                    <div class="absolute inset-0 border-4 border-white rounded-full opacity-70"></div>
+                                    <div class="absolute inset-8 border-2 border-white rounded-full opacity-50"></div>
+                                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-green-500 rounded-full opacity-80"></div>
+                                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white opacity-70">
+                                        <i class="material-icons text-4xl">face</i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-center text-sm text-gray-600">
+                            <p>Position your face within the circle for detection</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p>&copy; 2024 Face Attendance System. Made with 💖 by Yuvraj</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="lib/face-api.min.js"></script>
+    <script>
+        // Global variables
+        let webcam = document.getElementById('webcam');
+        let stream = null;
+        let modelsLoaded = false;
+        let detectionInterval = null;
+        
+        // DOM elements
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const loadModelBtn = document.getElementById('loadModelBtn');
+        const detectFaceBtn = document.getElementById('detectFaceBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const logContent = document.getElementById('logContent');
+        
+        // Status elements
+        const cameraStatus = document.getElementById('cameraStatus');
+        const modelStatus = document.getElementById('modelStatus');
+        const faceStatus = document.getElementById('faceStatus');
+        
+        // Add to log
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logContent.appendChild(logEntry);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        
+        // Update status
+        function updateStatus(element, text, color = 'text-gray-900') {
+            element.textContent = text;
+            element.className = color + ' font-medium';
+        }
+        
+        // Start camera
+        async function startCamera() {
+            log('Requesting camera access...');
+            updateStatus(cameraStatus, 'Requesting...', 'text-yellow-600');
+            
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    }
+                });
+                
+                webcam.srcObject = stream;
+                webcam.onloadedmetadata = () => {
+                    webcam.play();
+                    updateStatus(cameraStatus, 'Active', 'text-green-600');
+                    detectFaceBtn.disabled = false;
+                    log('Camera started successfully');
+                };
+            } catch (error) {
+                log('Camera error: ' + error.message);
+                updateStatus(cameraStatus, 'Error', 'text-red-600');
+                detectFaceBtn.disabled = true;
+                
+                if (error.name === 'NotAllowedError') {
+                    log('Please allow camera access when prompted');
+                } else if (error.name === 'NotFoundError') {
+                    log('No camera found');
+                } else {
+                    log('Unknown camera error');
+                }
+            }
+        }
+        
+        // Load face models
+        async function loadModels() {
+            if (modelsLoaded) {
+                log('Models already loaded');
+                return;
+            }
+            
+            log('Loading face detection models...');
+            updateStatus(modelStatus, 'Loading...', 'text-yellow-600');
+            
+            try {
+                // Try loading from local models first
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('./lib/models/');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('./lib/models/');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('./lib/models/');
+                
+                modelsLoaded = true;
+                updateStatus(modelStatus, 'Loaded', 'text-green-600');
+                log('Models loaded successfully from local files');
+            } catch (error) {
+                log('Local model loading failed: ' + error.message);
+                log('Attempting to load models from CDN...');
+                
+                try {
+                    // Fallback to CDN
+                    const cdnPath = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';
+                    await faceapi.nets.ssdMobilenetv1.loadFromUri(cdnPath);
+                    await faceapi.nets.faceLandmark68Net.loadFromUri(cdnPath);
+                    await faceapi.nets.faceRecognitionNet.loadFromUri(cdnPath);
+                    
+                    modelsLoaded = true;
+                    updateStatus(modelStatus, 'Loaded (CDN)', 'text-green-600');
+                    log('Models loaded successfully from CDN');
+                } catch (cdnError) {
+                    log('CDN model loading failed: ' + cdnError.message);
+                    updateStatus(modelStatus, 'Failed', 'text-red-600');
+                }
+            }
+        }
+        
+        // Detect face
+        async function detectFace() {
+            if (!modelsLoaded) {
+                log('Please load models first');
+                return;
+            }
+            
+            if (!webcam || webcam.readyState !== 4) {
+                log('Camera not ready');
+                return;
+            }
+            
+            try {
+                log('Detecting face...');
+                const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 });
+                const detections = await faceapi.detectAllFaces(webcam, options);
+                
+                const canvas = document.getElementById('overlayCanvas');
+                canvas.width = webcam.videoWidth;
+                canvas.height = webcam.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                if (detections.length > 0) {
+                    updateStatus(faceStatus, 'Yes (' + detections.length + ')', 'text-green-600');
+                    log('Face detected! Found ' + detections.length + ' face(s)');
+                    
+                    // Draw detection boxes
+                    detections.forEach(detection => {
+                        const box = detection.box;
+                        ctx.strokeStyle = '#10b981';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(box.x, box.y, box.width, box.height);
+                        
+                        ctx.fillStyle = '#10b981';
+                        ctx.font = '14px Arial';
+                        ctx.fillText(Math.round(detection.score * 100) + '%', box.x, box.y - 5);
+                    });
+                } else {
+                    updateStatus(faceStatus, 'No', 'text-red-600');
+                    log('No face detected');
+                }
+            } catch (error) {
+                log('Detection error: ' + error.message);
+                updateStatus(faceStatus, 'Error', 'text-red-600');
+            }
+        }
+        
+        // Reset test
+        function resetTest() {
+            // Stop camera
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            // Clear canvas
+            const canvas = document.getElementById('overlayCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Reset status
+            updateStatus(cameraStatus, 'Not started', 'text-gray-900');
+            updateStatus(modelStatus, 'Not loaded', 'text-gray-900');
+            updateStatus(faceStatus, 'No', 'text-gray-900');
+            
+            // Reset buttons
+            detectFaceBtn.disabled = true;
+            modelsLoaded = false;
+            
+            // Clear log
+            logContent.innerHTML = '';
+            log('Test reset');
+        }
+        
+        // Event listeners
+        startCameraBtn.addEventListener('click', startCamera);
+        loadModelBtn.addEventListener('click', loadModels);
+        detectFaceBtn.addEventListener('click', detectFace);
+        resetBtn.addEventListener('click', resetTest);
+        
+        // Initialize
+        log('Face Detection Test initialized');
+        log('Click "Start Camera" to begin');
+    </script>
+</body>
+</html>

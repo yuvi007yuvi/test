@@ -1,0 +1,76 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.admin == true",
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || auth.token.admin == true)",
+        ".write": "auth != null && (auth.uid == $uid || auth.token.admin == true)",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/)"
+        },
+        "role": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "faceDescriptor": {
+          ".validate": "newData.isArray() && newData.val().length > 0"
+        },
+        "faceImageUrl": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "createdAt": {
+          ".validate": "newData.isString() || newData.isNumber()"
+        },
+        "isActive": {
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+    "attendance": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || auth.token.admin == true)",
+        ".write": "auth != null && (auth.uid == $uid || auth.token.admin == true)",
+        "$attendanceId": {
+          "userId": {
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "timestamp": {
+            ".validate": "newData.isString() || newData.isNumber()"
+          },
+          "date": {
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "time": {
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "location": {
+            ".validate": "newData.hasChildren(['latitude', 'longitude'])",
+            "latitude": {
+              ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
+            },
+            "longitude": {
+              ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
+            }
+          }
+        }
+      }
+    },
+    "admins": {
+      ".read": "auth != null && auth.token.admin == true",
+      ".write": "auth != null && auth.token.admin == true",
+      "$uid": {
+        ".read": "auth != null && auth.token.admin == true",
+        ".write": "auth != null && auth.token.admin == true"
+      }
+    },
+    "face_images": {
+      ".read": "auth != null && auth.token.admin == true",
+      ".write": "auth != null"
+    }
+  }
+}

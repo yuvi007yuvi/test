@@ -1,0 +1,44 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Face images folder
+    match /face_images/{imageId} {
+      // Allow users to read their own face images
+      allow read: if request.auth != null && 
+        request.auth.uid == imageId.replace('.jpg', '');
+      
+      // Allow users to create their own face images
+      allow create: if request.auth != null && 
+        request.auth.uid == imageId.replace('.jpg', '');
+      
+      // Allow users to update their own face images
+      allow update: if request.auth != null && 
+        request.auth.uid == imageId.replace('.jpg', '');
+      
+      // Allow admins to read any face images
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Profile images folder
+    match /profile_images/{imageId} {
+      // Allow users to read their own profile images
+      allow read: if request.auth != null && 
+        request.auth.uid == imageId.replace('.jpg', '');
+      
+      // Allow users to create their own profile images
+      allow create: if request.auth != null && 
+        request.auth.uid == imageId.replace('.jpg', '');
+      
+      // Allow users to update their own profile images
+      allow update: if request.auth != null && 
+        request.auth.uid == imageId.replace('.jpg', '');
+    }
+    
+    // Allow admins to read any images
+    match /{allPaths=**} {
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true;
+    }
+  }
+}

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+                <h1 class="text-2xl font-bold text-white">Firebase Connection Test</h1>
+                <p class="text-indigo-100">Verify Firebase services are working correctly</p>
+            </div>
+            
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Connection Status -->
+                    <div class="bg-gray-50 rounded-lg p-5">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Connection Status</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg border">
+                                <span class="font-medium">Firebase App</span>
+                                <span id="appStatus" class="px-2 py-1 rounded text-sm">Checking...</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg border">
+                                <span class="font-medium">Firestore</span>
+                                <span id="firestoreStatus" class="px-2 py-1 rounded text-sm">Checking...</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg border">
+                                <span class="font-medium">Authentication</span>
+                                <span id="authStatus" class="px-2 py-1 rounded text-sm">Checking...</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg border">
+                                <span class="font-medium">Storage</span>
+                                <span id="storageStatus" class="px-2 py-1 rounded text-sm">Checking...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Test Actions -->
+                    <div class="bg-gray-50 rounded-lg p-5">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Test Actions</h2>
+                        
+                        <div class="space-y-4">
+                            <button id="testConnectionBtn" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                                <i class="material-icons mr-2">sync</i>Test Connection
+                            </button>
+                            
+                            <button id="createTestUserBtn" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i class="material-icons mr-2">person_add</i>Create Test User
+                            </button>
+                            
+                            <button id="readTestUserBtn" class="w-full bg-yellow-500 text-white py-3 px-4 rounded-lg hover:bg-yellow-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i class="material-icons mr-2">person</i>Read Test User
+                            </button>
+                            
+                            <button id="clearTestBtn" class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium">
+                                <i class="material-icons mr-2">clear</i>Clear Test
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Log Panel -->
+                <div class="mt-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Test Log</h2>
+                    <div id="logPanel" class="bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-sm h-64 overflow-y-auto">
+                        <div id="logContent" class="space-y-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p>&copy; 2024 Face Attendance System. Made with 💖 by Yuvraj</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module" src="firebase-config.js"></script>
+    <script>
+        // DOM elements
+        const appStatus = document.getElementById('appStatus');
+        const firestoreStatus = document.getElementById('firestoreStatus');
+        const authStatus = document.getElementById('authStatus');
+        const storageStatus = document.getElementById('storageStatus');
+        const logContent = document.getElementById('logContent');
+        const testConnectionBtn = document.getElementById('testConnectionBtn');
+        const createTestUserBtn = document.getElementById('createTestUserBtn');
+        const readTestUserBtn = document.getElementById('readTestUserBtn');
+        const clearTestBtn = document.getElementById('clearTestBtn');
+        
+        // Test variables
+        let testUserId = null;
+        
+        // Add to log
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            
+            let colorClass = 'text-green-400';
+            if (type === 'error') colorClass = 'text-red-400';
+            else if (type === 'warning') colorClass = 'text-yellow-400';
+            
+            logEntry.className = colorClass;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logContent.appendChild(logEntry);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        
+        // Update status
+        function updateStatus(element, status, color) {
+            element.textContent = status;
+            element.className = `px-2 py-1 rounded text-sm ${
+                color === 'green' ? 'bg-green-100 text-green-800' :
+                color === 'red' ? 'bg-red-100 text-red-800' :
+                color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-gray-100 text-gray-800'
+            }`;
+        }
+        
+        // Test Firebase connection
+        async function testFirebaseConnection() {
+            log('Testing Firebase connection...');
+            
+            // Check if Firebase is loaded
+            if (typeof firebase === 'undefined' || !window.firebase) {
+                updateStatus(appStatus, 'Not Loaded', 'red');
+                log('Firebase app not loaded', 'error');
+                return;
+            }
+            
+            updateStatus(appStatus, 'Connected', 'green');
+            log('Firebase app connected');
+            
+            // Check Firestore
+            if (window.db) {
+                try {
+                    // Test Firestore connection
+                    const testRef = window.db.collection('test');
+                    updateStatus(firestoreStatus, 'Connected', 'green');
+                    log('Firestore connected');
+                } catch (error) {
+                    updateStatus(firestoreStatus, 'Error', 'red');
+                    log('Firestore error: ' + error.message, 'error');
+                }
+            } else {
+                updateStatus(firestoreStatus, 'Not Available', 'red');
+                log('Firestore not available', 'error');
+            }
+            
+            // Check Auth
+            if (window.auth) {
+                try {
+                    updateStatus(authStatus, 'Connected', 'green');
+                    log('Firebase Auth connected');
+                } catch (error) {
+                    updateStatus(authStatus, 'Error', 'red');
+                    log('Firebase Auth error: ' + error.message, 'error');
+                }
+            } else {
+                updateStatus(authStatus, 'Not Available', 'red');
+                log('Firebase Auth not available', 'error');
+            }
+            
+            // Check Storage
+            if (window.storage) {
+                try {
+                    updateStatus(storageStatus, 'Connected', 'green');
+                    log('Firebase Storage connected');
+                } catch (error) {
+                    updateStatus(storageStatus, 'Error', 'red');
+                    log('Firebase Storage error: ' + error.message, 'error');
+                }
+            } else {
+                updateStatus(storageStatus, 'Not Available', 'red');
+                log('Firebase Storage not available', 'error');
+            }
+            
+            // Enable test buttons if services are available
+            if (window.db && window.auth) {
+                createTestUserBtn.disabled = false;
+                readTestUserBtn.disabled = false;
+            }
+        }
+        
+        // Create test user
+        async function createTestUser() {
+            if (!window.db) {
+                log('Firestore not available', 'error');
+                return;
+            }
+            
+            try {
+                log('Creating test user...');
+                
+                // Create a test user document
+                const testUserData = {
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    role: 'employee',
+                    createdAt: new Date(),
+                    isActive: true
+                };
+                
+                const docRef = await window.db.collection('users').add(testUserData);
+                testUserId = docRef.id;
+                
+                log('Test user created with ID: ' + testUserId);
+                log('Test user data: ' + JSON.stringify(testUserData, null, 2));
+            } catch (error) {
+                log('Error creating test user: ' + error.message, 'error');
+            }
+        }
+        
+        // Read test user
+        async function readTestUser() {
+            if (!window.db) {
+                log('Firestore not available', 'error');
+                return;
+            }
+            
+            if (!testUserId) {
+                log('No test user created yet', 'warning');
+                return;
+            }
+            
+            try {
+                log('Reading test user...');
+                
+                const docRef = window.db.collection('users').doc(testUserId);
+                const doc = await docRef.get();
+                
+                if (doc.exists) {
+                    const userData = doc.data();
+                    log('Test user data retrieved:');
+                    log(JSON.stringify(userData, null, 2));
+                } else {
+                    log('Test user not found', 'warning');
+                }
+            } catch (error) {
+                log('Error reading test user: ' + error.message, 'error');
+            }
+        }
+        
+        // Clear test
+        function clearTest() {
+            // Reset status indicators
+            updateStatus(appStatus, 'Checking...', 'yellow');
+            updateStatus(firestoreStatus, 'Checking...', 'yellow');
+            updateStatus(authStatus, 'Checking...', 'yellow');
+            updateStatus(storageStatus, 'Checking...', 'yellow');
+            
+            // Clear log
+            logContent.innerHTML = '';
+            log('Test cleared');
+            
+            // Reset test user ID
+            testUserId = null;
+            
+            // Disable test buttons
+            createTestUserBtn.disabled = true;
+            readTestUserBtn.disabled = true;
+        }
+        
+        // Event listeners
+        testConnectionBtn.addEventListener('click', testFirebaseConnection);
+        createTestUserBtn.addEventListener('click', createTestUser);
+        readTestUserBtn.addEventListener('click', readTestUser);
+        clearTestBtn.addEventListener('click', clearTest);
+        
+        // Initialize
+        log('Firebase Test Page initialized');
+        log('Click "Test Connection" to begin');
+    </script>
+</body>
+</html>
