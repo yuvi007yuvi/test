@@ -353,15 +353,21 @@ class RegistrationManager {
             const usersCollection = collection(window.db, 'users');
             const userRef = await addDoc(usersCollection, userData);
             
-            // Upload face image to Firebase Storage
+            // Upload face image to Firebase Storage with error handling
             if (this.faceImage) {
-                const faceImageBlob = this.dataURLToBlob(this.faceImage);
-                const storageRef = ref(window.storage, `face_images/${userRef.id}.jpg`);
-                await uploadBytes(storageRef, faceImageBlob);
-                const imageUrl = await getDownloadURL(storageRef);
-                
-                // Update user document with image URL
-                await updateDoc(userRef, { faceImageUrl: imageUrl });
+                try {
+                    const faceImageBlob = this.dataURLToBlob(this.faceImage);
+                    const storageRef = ref(window.storage, `face_images/${userRef.id}.jpg`);
+                    await uploadBytes(storageRef, faceImageBlob);
+                    const imageUrl = await getDownloadURL(storageRef);
+                    
+                    // Update user document with image URL
+                    await updateDoc(userRef, { faceImageUrl: imageUrl });
+                } catch (storageError) {
+                    console.error('Storage error:', storageError);
+                    // Continue with registration even if image upload fails
+                    this.showNotification('User registered, but face image could not be saved: ' + storageError.message, 'warning');
+                }
             }
 
             this.showNotification('User registered successfully!', 'success');

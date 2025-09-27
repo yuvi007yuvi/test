@@ -7,7 +7,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyCjqEYmgTV9iH9bdovaQXET0P7rOui5TEM",
     authDomain: "attendance-dff2f.firebaseapp.com",
     projectId: "attendance-dff2f",
-    storageBucket: "attendance-dff2f.firebasestorage.app",
+   storageBucket: "attendance-dff2f.appspot.com",
     messagingSenderId: "1054692796471",
     appId: "1:1054692796471:web:4117c8c6c0f47f1e4db7b2",
     measurementId: "G-8LW2XB4W3H"
@@ -56,7 +56,9 @@ async function initializeFirebase() {
 }
 
 // Initialize Firebase when the script loads
-initializeFirebase();
+if (typeof window !== 'undefined') {
+    initializeFirebase();
+}
 
 // Show error notification function
 function showFirebaseError(message) {
@@ -105,4 +107,6 @@ function checkFirebaseConnection() {
 }
 
 // Check connection after a delay
-setTimeout(checkFirebaseConnection, 3000);
+if (typeof window !== 'undefined') {
+    setTimeout(checkFirebaseConnection, 3000);
+}
