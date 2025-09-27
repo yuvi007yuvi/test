@@ -7,6 +7,7 @@ class RegistrationManager {
         this.faceDescriptor = null;
         this.isCaptured = false;
         this.detectionInterval = null;
+        this.detectionCount = 0;
         this.init();
     }
 
@@ -60,6 +61,7 @@ class RegistrationManager {
                 if (facePositionOverlay) {
                     facePositionOverlay.classList.remove('hidden');
                 }
+                this.showNotification('Face detection models loaded successfully', 'success');
             } else {
                 this.updateModelStatus('Failed to load', 'red');
                 this.showNotification('Failed to load face detection models', 'error');
@@ -70,7 +72,7 @@ class RegistrationManager {
         } catch (error) {
             console.error('Error loading face API:', error);
             this.updateModelStatus('Error', 'red');
-            this.showNotification('Error loading face detection models', 'error');
+            this.showNotification('Error loading face detection models: ' + error.message, 'error');
             if (loadingOverlay) {
                 loadingOverlay.classList.add('hidden');
             }
@@ -123,6 +125,7 @@ class RegistrationManager {
                     if (faceInstructions) {
                         faceInstructions.classList.add('hidden');
                     }
+                    this.showNotification('Camera activated successfully', 'success');
                 };
             }
         } catch (error) {
@@ -135,7 +138,7 @@ class RegistrationManager {
             } else if (error.name === 'NotFoundError') {
                 this.showNotification('No camera found. Please connect a camera to use this feature.', 'error');
             } else {
-                this.showNotification('Unable to access webcam. Please check permissions and try again.', 'error');
+                this.showNotification('Unable to access webcam. Please check permissions and try again. Error: ' + error.message, 'error');
             }
         }
     }
@@ -159,6 +162,13 @@ class RegistrationManager {
     async detectFaces() {
         try {
             const detections = await window.faceAPIManager.detectFaces(this.webcam);
+            
+            // Debug information
+            this.detectionCount++;
+            if (this.detectionCount % 50 === 0) { // Log every 5 seconds
+                console.log('Face detection attempt:', this.detectionCount, 'Detections found:', detections.length);
+            }
+            
             this.updateFaceDetectionStatus(detections.length > 0);
             this.drawFaceBoxes(detections);
             
@@ -170,8 +180,10 @@ class RegistrationManager {
                 facePositionOverlay.classList.remove('hidden');
             }
         } catch (error) {
-            // Don't log detection errors continuously as they're expected when no face is detected
-            // console.error('Face detection error:', error);
+            // Log error only occasionally to avoid console spam
+            if (this.detectionCount % 100 === 0) {
+                console.error('Face detection error:', error);
+            }
         }
     }
 
@@ -189,6 +201,11 @@ class RegistrationManager {
             showConfidence: true,
             showExpressions: false
         });
+        
+        // Debug: Log detection details occasionally
+        if (this.detectionCount % 50 === 0 && detections.length > 0) {
+            console.log('Face detected:', detections[0].detection);
+        }
     }
 
     updateFaceDetectionStatus(faceDetected) {
@@ -256,7 +273,7 @@ class RegistrationManager {
 
         } catch (error) {
             console.error('Error capturing face:', error);
-            this.updateCaptureStatus(error.message, 'error');
+            this.updateCaptureStatus('Face capture failed: ' + error.message, 'error');
             this.showNotification('Face capture failed: ' + error.message, 'error');
         }
     }
